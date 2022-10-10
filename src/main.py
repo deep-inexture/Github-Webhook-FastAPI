@@ -57,13 +57,17 @@ async def webhook_handler(request: Request):
     event_type = request.headers.get("X-Github-Event")
 
     action = payload.get("action")
-    if event_type == "create":
 
-        return {'action': action, 'payload': payload}
+    print('action :', action)
+    print('payload: ', payload)
+    print('event_type :', event_type)
+
+    if event_type == "create":
+        return {'action': action, 'payload': payload, 'event_type': event_type}
     elif event_type == "delete":
-        return {'action': action, 'payload': payload}
+        return {'action': action, 'payload': payload, 'event_type': event_type}
     else:
-        return {'action': action, 'payload': payload}
+        return {'action': action, 'payload': payload, 'event_type': event_type}
     # reviews requested or removed
     # if event_type == "pull_request":
     #     action = payload.get("action")
