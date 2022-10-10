@@ -55,7 +55,6 @@ async def webhook_handler(request: Request):
     # handle events
     payload = await request.json()
     event_type = request.headers.get("X-Github-Event")
-    # return {'raw': raw, 'payload': payload, 'event_type':event_type}
 
     action = payload.get("action")
     if event_type == "create":
