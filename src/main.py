@@ -1,39 +1,58 @@
-import hashlib
+import requests
 import hmac
-import http
-import json
 import os
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
 
-# 1-----------------------------------------------------------------------------------------------------------------
-# def generate_hash_signature(
-#     secret: bytes,
-#     payload: str,
-#     digest_method=hashlib.sha1,
-# ):
-#     return hmac.new(secret, payload, digest_method).hexdigest()
-#
-#
-# @app.post("/webhook", status_code=http.HTTPStatus.ACCEPTED)
-# async def webhook(request: Request, x_hub_signature: str = Header(None)):
-#     payload = await request.body()
-#     secret = os.environ.get("SECRET_KEY").encode("utf-8")
-#     signature = generate_hash_signature(secret, payload)
-#     if x_hub_signature != f"sha1={signature}":
-#         raise HTTPException(status_code=401, detail="Authentication error.")
-#     print(payload)
-#     # print(json.dumps(payload))
-#     return {payload}
-
-
-# 2-------------------------------------------------------------------------------------------------
 WEBHOOK_SECRET = os.getenv("SECRET_KEY")
+ENDPOINT = os.environ.get("ENDPOINT")
+USERNAME = os.environ.get("USERNAME")
+PASSWORD = os.environ.get("PASSWORD")
+TOKEN = os.environ.get("TOKEN")
+ORG_NAME = os.environ.get("ORG_NAME")
+HOST = os.environ.get('HOST')
+
+
+@app.post("/create_webhook")
+def create_webhook():
+    try:
+        EVENTS = ["push", "repository", "member"]
+
+        config = {
+            "url": "https://{host}/{endpoint}".format(host=HOST, endpoint=ENDPOINT),
+            "content_type": "json"
+        }
+
+        context = {
+            'org': ORG_NAME,
+            'name': 'web',
+            'active': True,
+            'events': EVENTS,
+            'config': config
+        }
+        # create webhook using token
+        headers = {'Authorization': 'Bearer ' + TOKEN,
+                   "Accept": "application/vnd.github+json"}
+
+        req = requests.post("https://api.github.com/orgs/{ORG}/hooks".format(ORG=ORG_NAME), json=context,
+                            headers=headers)
+        response = req.json()
+        if response.get('message') == "Not Found":
+            print("Exception: Incorrect Organization NAME.")
+            print(response)
+            pass
+        if response.get('message') == "Bad credentials":
+            print("Exception: Incorrect Token/BAD Login credentials.")
+            print(response)
+            pass
+        return response
+    except Exception as e:
+        pass
 
 
 # caclulate hmac digest of payload with shared secret token
