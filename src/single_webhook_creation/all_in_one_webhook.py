@@ -34,9 +34,13 @@ def create_webhook():
         # create webhook using token
         github = Github(TOKEN)
         org_obj = github.get_organization(ORG_NAME)
-        webhook_obj = org_obj.create_hook(name='web', config=config, events=EVENTS, active=True)
+        if org_obj:
+            print("Already Exists")
+            webhook_obj = org_obj.create_hook(name='web', config=config, events=EVENTS, active=True)
+            return "Webhook Created"
+        else:
+            print(f"Enable to find Organization - {ORG_NAME}")
 
-        return "Webhook Created"
     except Exception as e:
         # Wrong ORGANIZATION NAME :
         # Exception : 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/reference/orgs#get-an-organization"}
