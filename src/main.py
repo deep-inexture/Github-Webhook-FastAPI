@@ -1,107 +1,53 @@
-import requests
-import hmac
-import os
+from fastapi import FastAPI
+from .single_webhook_creation import all_in_one_webhook
+from .multiple_webhook_creation import repository_webhook, commits_webhook, users_webhook
 
-from fastapi import FastAPI, HTTPException, Request
-from dotenv import load_dotenv
+"""
+Creates an Object of FastAPI Instance as app with some Title and Description while viewing in
+Swagger or ReadDoc mode.
+"""
 
-load_dotenv()
+tags_metadata = [
+    {
+        "name": "Single Webhook Creation - 3 in 1",
+        "description": "Create Webhook for all 3 task into 1."
+                       "Also Call webhook via only one endpoint '/webhook'"
+    },
+    {
+        "name": "Repo Webhooks Creations",
+        "description": "Create repository webhooks and its different events."
+                       "Call this webhook with assigned endpoint '/repo"
+    },
+    {
+        "name": "Commit Webhooks Creations",
+        "description": "Create commits webhooks and its events for every pushes commits."
+                       "Call this webhook with assigned endpoint '/commit"
+    },
+    {
+        "name": "Users Webhooks Creations",
+        "description": "Create users webhooks and its events for every user added | removed."
+                       "Call this webhook with assigned endpoint '/user_updates"
+    },
+]
 
-app = FastAPI()
+app = FastAPI(
+    title='Github Webhook Implementation',
+    description='Implementing webhook via github library in py and handle events via webhook endpoints on runtime',
+    version='1.0.0',
+    terms_of_service='',
+    contact={
+        'name': 'DEEP SHAH',
+        'email': 'deep.inexture@gmail.com'
+    },
+    license_info={
+        "name": "Apache 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+    openapi_tags=tags_metadata
+)
 
-WEBHOOK_SECRET = os.getenv("SECRET_KEY")
-ENDPOINT = os.environ.get("ENDPOINT")
-USERNAME = os.environ.get("USERNAME")
-PASSWORD = os.environ.get("PASSWORD")
-TOKEN = os.environ.get("TOKEN")
-ORG_NAME = os.environ.get("ORG_NAME")
-HOST = os.environ.get('HOST')
-
-
-@app.post("/create_webhook")
-def create_webhook():
-    try:
-        EVENTS = ["push", "repository", "member"]
-
-        config = {
-            "url": "https://{host}/{endpoint}".format(host=HOST, endpoint=ENDPOINT),
-            "content_type": "json"
-        }
-
-        context = {
-            'org': ORG_NAME,
-            'name': 'web',
-            'active': True,
-            'events': EVENTS,
-            'config': config
-        }
-        # create webhook using token
-        headers = {'Authorization': 'Bearer ' + TOKEN,
-                   "Accept": "application/vnd.github+json"}
-
-        req = requests.post("https://api.github.com/orgs/{ORG}/hooks".format(ORG=ORG_NAME), json=context,
-                            headers=headers)
-        response = req.json()
-        if response.get('message') == "Not Found":
-            print("Exception: Incorrect Organization NAME.")
-            print(response)
-            pass
-        if response.get('message') == "Bad credentials":
-            print("Exception: Incorrect Token/BAD Login credentials.")
-            print(response)
-            pass
-        return response
-    except Exception as e:
-        pass
-
-
-# caclulate hmac digest of payload with shared secret token
-def calc_signature(payload):
-    digest = hmac.new(
-        key=WEBHOOK_SECRET.encode("utf-8"), msg=payload, digestmod="sha1"
-    ).hexdigest()
-    return f"sha1={digest}"
-
-
-@app.post("/webhook")
-async def webhook_handler(request: Request):
-    # verify webhook signature
-    raw = await request.body()
-    signature = request.headers.get("X-Hub-Signature")
-    if signature != calc_signature(raw):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    # handle events
-    payload = await request.json()
-    event_type = request.headers.get("X-Github-Event")
-
-    action = payload.get("action")
-
-    print('action :', action)
-    print('payload: ', payload)
-    print('event_type :', event_type)
-
-    if event_type == "create":
-        return {'action': action, 'payload': payload, 'event_type': event_type}
-    elif event_type == "delete":
-        return {'action': action, 'payload': payload, 'event_type': event_type}
-    else:
-        return {'action': action, 'payload': payload, 'event_type': event_type}
-    # reviews requested or removed
-    # if event_type == "pull_request":
-    #     action = payload.get("action")
-    #     if action == "review_requested":
-    #     # TODO: store review request
-    #         return "ok"
-    #     elif action == "review_request_removed":
-    #         # TODO: delete review request
-    #         return "ok"
-    #     return "ok"
-    #
-    # # review submitted
-    # if event_type == "pull_request_review" and payload.get("action") == "submitted":
-    #     # TODO: update review request
-    #     return "ok"
-    #
-    # # ignore other events
-    # return "ok"
+"""Following command will call the routers and stored in different files for clean flow of project ."""
+app.include_router(all_in_one_webhook.router)
+app.include_router(repository_webhook.router)
+app.include_router(commits_webhook.router)
+app.include_router(users_webhook.router)
