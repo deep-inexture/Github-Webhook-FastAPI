@@ -1,8 +1,6 @@
 import hmac
-import json
 import os
 
-import requests
 from fastapi import Request, APIRouter
 from fastapi import HTTPException
 from github import Github, GithubException
@@ -36,7 +34,7 @@ def create_webhook():
 
         # Configuration data required while using Pygithub libraries
         config = {
-            "url": "https://{host}/{endpoint}".format(host=HOST, endpoint=ENDPOINT),
+            "url": "{host}/{endpoint}".format(host=HOST, endpoint=ENDPOINT),
             "secret": WEBHOOK_SECRET,
             "content_type": "json"
         }
