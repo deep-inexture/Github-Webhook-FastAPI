@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from .single_webhook_creation import all_in_one_webhook
 from .multiple_webhook_creation import repository_webhook, commits_webhook, users_webhook
+from src import scheduler
 
 """
 Creates an Object of FastAPI Instance as app with some Title and Description while viewing in
@@ -45,6 +46,20 @@ app = FastAPI(
     },
     openapi_tags=tags_metadata
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    print("Reached...")
+    read_root()
+
+
+def read_root():
+    try:
+        scheduler.start_scheduler()
+    except Exception as e:
+        print(e)
+
 
 """Following command will call the routers and stored in different files for clean flow of project ."""
 app.include_router(all_in_one_webhook.router)
