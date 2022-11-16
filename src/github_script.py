@@ -15,7 +15,7 @@ try:
     target_branch = "main"
     target_branch_obj = target_repo.get_branch(target_branch)
 
-    no_of_test_branch = 6000
+    no_of_test_branch = 10
     for i in range(1, no_of_test_branch + 1):
         target_branch = 'testing_' + str(i)
         target_repo.create_git_ref(ref='refs/heads/' + target_branch, sha=target_branch_obj.commit.sha)
